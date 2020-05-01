@@ -50,9 +50,22 @@ Example reminders:
 /remind weekly test weekly
 ```
 
+## Installation
+
+Requires [Rust](https://www.rust-lang.org/).
+
+```
+% git clone https://github.com/insanum/reminders
+% cd reminders
+% cargo install --path .
+```
+
+The application binary will be located at `$HOME/.cargo/bin/reminders`.
+
 ## Usage
 
 ```
+% $HOME/.cargo/bin/reminders -h
 Usage: reminders [options]
 
 Options:
