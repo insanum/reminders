@@ -1,0 +1,81 @@
+
+# <MM>/<DD>[/<YY>|/<YYYY>] <HH>:<MM><am|pm> - Date @ <time>
+# <MM>/<DD>[/<YY>|/<YYYY>] <HH>:<MM>        - Date @ <time> (military)
+# <MM>/<DD>[/<YY>|/<YYYY>] <HH><am|pm>      - Date @ <time> (min=0)
+# <MM>/<DD>[/<YY>|/<YYYY>]                  - Date @ 8:00am
+#
+# <HH>:<MM><am|pm> - Every day @ <time>
+# <HH>:<MM>        - Every day @ <time> (military)
+# <HH><am|pm>      - Every day @ <time> (min=0)
+#
+# <sun|mon|tue|wed|thu|fri|sat> <HH>:<MM><am|pm> - <weekday> @ <time>
+# <sun|mon|tue|wed|thu|fri|sat> <HH>:<MM>        - <weekday> @ <time> (military)
+# <sun|mon|tue|wed|thu|fri|sat> <HH><am|pm>      - <weekday> @ <time> (min=0)
+# <sun|mon|tue|wed|thu|fri|sat>                  - <weekday> @ 8:00am
+#
+# monthly  - Every month on the 1st @ 8:00am
+# biweekly - Every other Monday @ 8:00am (even weeks)
+# weekly   - Every Monday @ 8:00am
+# daily    - Every day @ 8:00am
+
+reminders: |
+  Test1 - reminders -t "2020/04/29 11:00" -c test.yaml
+
+  /remind 4/29/2020 11:00am test1a.1
+  /remind 4/29/20   11:00am test1a.2
+  /remind 4/29      11:00am test1a.3
+  /remind           11:00am test1a.4
+  /remind 4/29/2020 11:00   test1b.1
+  /remind 4/29/20   11:00   test1b.2
+  /remind 4/29      11:00   test1b.3
+  /remind           11:00   test1b.4
+  /remind 4/29/2020 11am    test1c.1
+  /remind 4/29/20   11am    test1c.2
+  /remind 4/29      11am    test1c.3
+  /remind           11am    test1c.4
+
+  Test2 - reminders -t "2020/04/29 13:00" -c test.yaml
+
+  /remind 4/29/2020 1:00pm test2a.1
+  /remind 4/29/20   1:00pm test2a.2
+  /remind 4/29      1:00pm test2a.3
+  /remind           1:00pm test2a.4
+  /remind 4/29/2020 13:00  test2b.1
+  /remind 4/29/20   13:00  test2b.2
+  /remind 4/29      13:00  test2b.3
+  /remind           13:00  test2b.4
+  /remind 4/29/2020 1pm    test2c.1
+  /remind 4/29/20   1pm    test2c.2
+  /remind 4/29      1pm    test2c.3
+  /remind           1pm    test2c.4
+
+  Test3 - reminders -t "2020/04/26 10:00" -c test.yaml
+
+  /remind sun 10:00am test3a.1
+  /remind sun 10:00   test3a.2
+  /remind sun 10am    test3a.3
+
+  Test4 - reminders -t "2020/04/26 14:00" -c test.yaml
+
+  /remind sun 2:00pm test4a.1
+  /remind sun 14:00  test4a.2
+  /remind sun 2pm    test4a.3
+
+  Test5 - reminders -t "2020/04/26 8:00" -c test.yaml
+
+  /remind sun test5:sun
+
+  Test6 - reminders -t "2020/04/01 8:00" -c test.yaml
+
+  /remind monthly test6:monthly
+
+  Test7 - reminders -t "2020/04/27 8:00" -c test.yaml
+
+  /remind biweekly test7a:biweekly
+  /remind weekly   test7b:weekly
+  /remind mon      test7c:mon
+
+  Test8 - reminders -t "2020/04/28 8:00" -c test.yaml
+
+  /remind daily    test8:daily
+
