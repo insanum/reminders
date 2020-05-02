@@ -602,6 +602,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     } else {
         dt = Local::now().naive_local().with_nanosecond(0).unwrap();
     }
+    println!("@ {:?}", dt);
 
     if !matches.opt_present("c") {
         return Err("ERROR: must specify the config file")?;
