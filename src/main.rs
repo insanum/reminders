@@ -600,7 +600,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
         dt = NaiveDateTime::parse_from_str(&matches.opt_str("t").unwrap(),
                                            "%Y/%m/%d %H:%M")?;
     } else {
-        dt = Local::now().naive_local().with_nanosecond(0).unwrap();
+        dt = Local::now().naive_local().with_nanosecond(0).unwrap()
+                                       .with_second(0).unwrap();
     }
     println!("@ {:?}", dt);
 
