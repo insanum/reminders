@@ -17,19 +17,20 @@ fn tag_color(tag: &str) -> String
 
 fn dump_line(i: usize, line: &str)
 {
-    let task = Regex::new(r"^(- \[[ |x]\] )(.*)$").unwrap();
+    let task = Regex::new(r"^(\s*)(- \[[ |x]\] )(.*)$").unwrap();
     let tag = Regex::new(r"^#.*$").unwrap();
 
     let c = task.captures(line).unwrap();
-    let x = c.get(1).map(|m| match m.as_str() {
+    let x = c.get(2).map(|m| match m.as_str() {
                                  "- [x] " => true,
                                  _        => false
                              }).unwrap();
 
     let words: Vec<&str> =
-        c.get(2).map_or("", |m| m.as_str()).split(' ').collect();
+        c.get(3).map_or("", |m| m.as_str()).split(' ').collect();
 
     let mut l = String::new();
+    l.push_str(c.get(1).map_or("", |m| m.as_str()));
 
     for i in 0..words.len() {
         if tag.is_match(&words[i]) {
@@ -44,7 +45,7 @@ fn dump_line(i: usize, line: &str)
     }
 
     println!("{:>3}: {}",
-             i.to_string().cyan(),
+             (i + 1).to_string().cyan(),
              match x {
                  true  => l.as_str().dimmed().italic().strikethrough(),
                  false => l.as_str().clear()
@@ -54,7 +55,7 @@ fn dump_line(i: usize, line: &str)
 fn dump_lines(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
               show_completed: bool)
 {
-    let rgx = format!(r"^- \[[{}]\] .*$",
+    let rgx = format!(r"^\s*- \[[{}]\] .*$",
                       match show_completed { true => " |x", false => " " });
 
     let l_match = Regex::new(&rgx).unwrap();
@@ -69,37 +70,66 @@ fn dump_lines(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
 fn dump_tag(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
             tag: String, show_completed: bool)
 {
-    let rgx = format!(r"^- \[[{}]\] .*\s+#{}\s?.*$",
+    let rgx = format!(r"^\s*- \[[{}]\] .*\s+#{}\s?.*$",
                       match show_completed { true => " |x", false => " " },
                       tag);
 
     let tag_match = Regex::new(&rgx).unwrap();
+    let mut parent = false;
 
     for i in sec_start..(sec_end + 1) {
-        if tag_match.is_match(lines[i as usize]) {
-            dump_line(i as usize, lines[i as usize]);
+        let idx = i as usize;
+        if parent {
+            if lines[idx].starts_with(" ") {
+                dump_line(idx, lines[idx]);
+                continue;
+            }
+
+            parent = false;
+        }
+
+        if tag_match.is_match(lines[idx]) {
+            dump_line(idx, lines[idx]);
+            parent = true;
         }
     }
 }
 
-fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32)
+fn dump_section_titles(lines: &Vec<&str>)
+{
+    let any_hdr = Regex::new(r"^#+ .*").unwrap();
+
+    for i in 0..lines.len() {
+        if any_hdr.is_match(lines[i]) {
+            println!("{}", lines[i]);
+        }
+    }
+}
+
+fn get_section(lines: &Vec<&str>, section: &str) -> (bool, String, i32, i32)
 {
     let mut start_idx: i32 = -1;
     let mut end_idx: i32 = -1;
-    let hdr = format!(r"^#+ .*{}.*", section);
+    let hdr = format!(r"^#+ .*(?i){}(?-i).*", section);
     let section_hdr = Regex::new(&hdr).unwrap();
     let any_hdr = Regex::new(r"^#+ .*").unwrap();
     let blank = Regex::new(r"^\s*$").unwrap();
 
+    if section == "" {
+        return (true, "ALL".to_string(), 0, (lines.len() - 1) as i32);
+    }
+
+    let mut sec_hdr = String::new();
     for i in 0..lines.len() {
         if section_hdr.is_match(lines[i]) {
+            sec_hdr = lines[i].to_string();
             start_idx = (i + 1) as i32;
             break;
         }
     }
 
     if start_idx == -1 {
-        return (false, -1, -1)
+        return (false, sec_hdr, -1, -1)
     }
 
     while start_idx < lines.len() as i32 &&
@@ -108,7 +138,7 @@ fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32)
     }
 
     if start_idx == lines.len() as i32 {
-        return (false, -1, -1)
+        return (false, sec_hdr, -1, -1)
     }
 
     for i in start_idx as usize..lines.len() {
@@ -127,7 +157,7 @@ fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32)
         end_idx -= 1;
     }
 
-    return (true, start_idx, end_idx);
+    return (true, sec_hdr, start_idx, end_idx);
 }
 
 fn print_usage(program: &str, opts: Options) {
@@ -168,9 +198,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optflag("h", "help", "print this help menu");
+    opts.optflag("h", "", "print this help menu");
     opts.optopt("f", "", "todo file", "<file.md>");
-    opts.optopt("s", "", "task section (default=Inbox)", "<section>");
+    opts.optflag("l", "", "list section titles");
+    opts.optopt("s", "", "task section (default is all tasks)", "<section>");
     opts.optopt("t", "", "show tag", "<tag>");
     opts.optflag("c", "", "show completed");
     opts.optopt("n", "", "new task", "<task>");
@@ -207,17 +238,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     }
 
     let section = match matches.opt_present("s") {
-                      true  => matches.opt_str("s").unwrap(),
-                      false => "Inbox".to_string()
+                        true  => matches.opt_str("s").unwrap(),
+                        false => "".to_string()
                   };
 
-    let (sec, sec_start, sec_end) = get_section(&lines, &section);
+    let (sec, sec_hdr, sec_start, sec_end) =
+        get_section(&lines, &section);
     if !sec {
         return Err(format!("section not found ({})", section))?;
     }
 
+    /* dump the section titles */
+    if matches.opt_present("l") {
+        dump_section_titles(&lines);
+        return Ok(());
+    }
     /* dump the selected tag for the section */
-    if matches.opt_present("t") {
+    else if matches.opt_present("t") {
+        let s = sec_hdr.trim_start_matches("#").trim_start_matches(" ");
+        println!("{}", format!("{}:", s).bold().underline());
         dump_tag(&lines, sec_start, sec_end, matches.opt_str("t").unwrap(),
                  matches.opt_present("c"));
         return Ok(());
@@ -232,16 +271,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     else if matches.opt_present("x") {
         let task_num =
             match matches.opt_str("x").unwrap().parse::<i32>() {
-                Ok(n)  => n,
+                Ok(n)  => (n - 1),
                 Err(e) => return Err(e.to_string())?
             };
 
+        /* XXX make sure this line is a task toggle'able line... */
         let toggled_task = toggle_task(&lines[task_num as usize]);
         lines[task_num as usize] = &toggled_task;
         return write_file(&todo_file, &lines);
     }
     /* dump the selected lines in the section */
     else {
+        let s = sec_hdr.trim_start_matches("#").trim_start_matches(" ");
+        println!("{}", format!("{}:", s).bold().underline());
         dump_lines(&lines, sec_start, sec_end, matches.opt_present("c"));
         return Ok(());
     }
