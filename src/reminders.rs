@@ -1,9 +1,4 @@
 
-extern crate yaml_rust;
-extern crate reqwest;
-extern crate regex;
-extern crate chrono;
-extern crate getopts;
 
 #[macro_use]
 extern crate lazy_static;
@@ -12,10 +7,10 @@ use std::env;
 use std::fs;
 use std::collections::HashMap;
 use getopts::Options;
-use yaml_rust::{Yaml,YamlLoader};
-use regex::{Regex,Match};
+use yaml_rust::{ Yaml, YamlLoader };
+use regex::{ Regex, Match };
 use chrono::prelude::*;
-use chrono::{NaiveDate,NaiveTime,NaiveDateTime};
+use chrono::{ NaiveDate, NaiveTime, NaiveDateTime };
 
 static REMIND_TAG: &str = "/remind ";
 
@@ -530,7 +525,7 @@ fn get_todo(cfg: &yaml_rust::Yaml) ->
 
     if file.is_badvalue() || file.is_null() {
         if cfg["reminders"].is_badvalue() {
-            return Err("ERROR: invalid config file")?;
+            return Err("invalid config file")?;
         } else {
             return Ok("".to_string());
         }
@@ -547,7 +542,7 @@ fn get_todo(cfg: &yaml_rust::Yaml) ->
 
             if user.is_badvalue() || user.is_null() ||
                pass.is_badvalue() || pass.is_null() {
-                return Err("ERROR: invalid http credentials")?;
+                return Err("invalid http credentials")?;
             }
 
             txt = client.get(file.as_str().unwrap())
@@ -606,7 +601,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     println!("@ {:?}", dt);
 
     if !matches.opt_present("c") {
-        return Err("ERROR: must specify the config file")?;
+        return Err("must specify the config file")?;
     }
 
     let cfg_file = matches.opt_str("c").unwrap();
