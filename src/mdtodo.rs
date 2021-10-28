@@ -260,11 +260,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
         return Ok(());
     }
 
-    if !matches.opt_present("f") {
-        return Err("must specify the todo file")?;
+    let todo_file;
+    if matches.opt_present("f") {
+        todo_file = matches.opt_str("f").unwrap();
+    } else {
+        todo_file = match env::var("TODO_FILE") {
+            Ok(v)  => v,
+            Err(_e) => return Err("must specify a todo file")?
+        }
     }
-
-    let todo_file = matches.opt_str("f").unwrap();
 
     let txt = fs::read_to_string(&todo_file)
                   .expect("failed to read todo file");
@@ -274,10 +278,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     let l_len = lines.len();
     if lines[l_len - 1].len() == 0 {
         lines[l_len - 1] = "\n"; /* insert the last newline if removed */
-    }
-
-    if !matches.opt_present("f") {
-        return Err("must specify the todo file")?;
     }
 
     let section = match matches.opt_present("s") {
