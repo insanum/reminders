@@ -10,10 +10,10 @@ use colored::*;
 
 lazy_static!
 {
-    static ref TASK_LINE: Regex = Regex::new(r"^(\s*)(- \[[ |x]\] )(.*)$").unwrap();
-    static ref TASK_NO_X_LINE: Regex = Regex::new(r"^(\s*)(- \[ \] )(.*)$").unwrap();
-    static ref TASK_X_LINE: Regex = Regex::new(r"^(\s*)(- \[x\] )(.*)$").unwrap();
-    static ref HDR_LINE: Regex = Regex::new(r"^(#+) (.*)").unwrap();
+    static ref TASK_LINE: Regex = Regex::new(r"^(\s*)(-\s\[[ |x]\]\s)(.*)$").unwrap();
+    static ref TASK_NO_X_LINE: Regex = Regex::new(r"^(\s*)(-\s\[ \]\s)(.*)$").unwrap();
+    static ref TASK_X_LINE: Regex = Regex::new(r"^(\s*)(-\s\[x\]\s)(.*)$").unwrap();
+    static ref HDR_LINE: Regex = Regex::new(r"^(#+)\s(.*)").unwrap();
     static ref TAG: Regex = Regex::new(r"^#\S+$").unwrap();
     static ref BLANK: Regex = Regex::new(r"^\s*$").unwrap();
 }
@@ -44,7 +44,6 @@ fn dump_line(i: usize, line: &str)
         caps.get(3).map_or("", |m| m.as_str()).split(' ').collect();
 
     let mut lp = String::new();
-    lp.push_str(caps.get(1).unwrap().as_str());
 
     for i in 0..words.len() {
         if TAG.is_match(&words[i]) {
@@ -58,8 +57,9 @@ fn dump_line(i: usize, line: &str)
         }
     }
 
-    println!("{}: {}",
+    println!("{}: {}{}",
              (i + 1).to_string().cyan(),
+             caps.get(1).unwrap().as_str(),
              match x {
                  true  => lp.as_str().dimmed().italic().strikethrough(),
                  false => lp.as_str().clear()
@@ -121,7 +121,13 @@ fn dump_tag(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
         }
 
         if parent {
-            if lines[idx].starts_with(" ") {
+            if TASK_LINE.is_match(lines[idx]) &&
+               lines[idx].starts_with(" ") {
+                let mut hp = String::new();
+                for _j in 0..indent {
+                    hp.push_str("  ");
+                }
+                print!("{}", hp);
                 dump_line(idx, lines[idx]);
                 continue;
             }
