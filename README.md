@@ -13,10 +13,20 @@ Current notification channels are:
 
 ## Reminder Specification
 
-A reminder string is specified as follows (single line):
+A reminder string is specified as follows:
 
 ```
-/remind <date_time> <message>
+/remind <date_time> <text>
+/rem <date_time> <text>
+/r <date_time> <text>
+```
+
+Additionally, markdown tasks can also be used:
+
+```
+- [ ] <text> /remind <date_time>
+- [ ] <text> /rem <date_time>
+- [ ] <text> /r <date_time>
 ```
 
 The `<date_time>` format can be any of the following:
@@ -27,14 +37,14 @@ The `<date_time>` format can be any of the following:
 <MM>/<DD>[/<YY>|/<YYYY>] <HH><am|pm>      - Date @ <time> (min=0)
 <MM>/<DD>[/<YY>|/<YYYY>]                  - Date @ 8:00am
 
-<HH>:<MM><am|pm> - Every day @ <time>
-<HH>:<MM>        - Every day @ <time> (military)
-<HH><am|pm>      - Every day @ <time> (min=0)
-
 <sun|mon|tue|wed|thu|fri|sat> <HH>:<MM><am|pm> - <weekday> @ <time>
 <sun|mon|tue|wed|thu|fri|sat> <HH>:<MM>        - <weekday> @ <time> (military)
 <sun|mon|tue|wed|thu|fri|sat> <HH><am|pm>      - <weekday> @ <time> (min=0)
 <sun|mon|tue|wed|thu|fri|sat>                  - <weekday> @ 8:00am
+
+<HH>:<MM><am|pm> - Every day @ <time>
+<HH>:<MM>        - Every day @ <time> (military)
+<HH><am|pm>      - Every day @ <time> (min=0)
 
 monthly  - Every month on the 1st @ 8:00am
 biweekly - Every other Monday @ 8:00am (even weeks)

@@ -1,15 +1,13 @@
-
 #[macro_use]
 extern crate lazy_static;
 
-use std::env;
-use std::fs;
+use colored::*;
 use getopts::Options;
 use regex::Regex;
-use colored::*;
+use std::env;
+use std::fs;
 
-lazy_static!
-{
+lazy_static! {
     static ref TASK_LINE: Regex = Regex::new(r"^(\s*)(-\s\[[ |x]\]\s)(.*)$").unwrap();
     static ref TASK_NO_X_LINE: Regex = Regex::new(r"^(\s*)(-\s\[ \]\s)(.*)$").unwrap();
     static ref TASK_X_LINE: Regex = Regex::new(r"^(\s*)(-\s\[x\]\s)(.*)$").unwrap();
@@ -18,30 +16,30 @@ lazy_static!
     static ref BLANK: Regex = Regex::new(r"^\s*$").unwrap();
 }
 
-fn tag_color(tag: &str) -> String
-{
+fn tag_color(tag: &str) -> String {
     match tag {
-        "#high"   => tag.red().to_string(),
+        "#high" => tag.red().to_string(),
         "#medium" => tag.yellow().to_string(),
-        "#low"    => tag.green().to_string(),
-        _         => tag.magenta().to_string()
+        "#low" => tag.green().to_string(),
+        _ => tag.magenta().to_string(),
     }
 }
 
-fn dump_line(i: usize, line: &str)
-{
+fn dump_line(i: usize, line: &str) {
     let caps = match TASK_LINE.captures(line) {
-                   None    => return,
-                   Some(c) => c
-               };
+        None => return,
+        Some(c) => c,
+    };
 
-    let x = caps.get(2).map(|m| match m.as_str() {
-                                    "- [x] " => true,
-                                    _        => false
-                                }).unwrap();
+    let x = caps
+        .get(2)
+        .map(|m| match m.as_str() {
+            "- [x] " => true,
+            _ => false,
+        })
+        .unwrap();
 
-    let words: Vec<&str> =
-        caps.get(3).map_or("", |m| m.as_str()).split(' ').collect();
+    let words: Vec<&str> = caps.get(3).map_or("", |m| m.as_str()).split(' ').collect();
 
     let mut lp = String::new();
 
@@ -57,18 +55,18 @@ fn dump_line(i: usize, line: &str)
         }
     }
 
-    println!("{}: {}{}",
-             (i + 1).to_string().cyan(),
-             caps.get(1).unwrap().as_str(),
-             match x {
-                 true  => lp.as_str().dimmed().italic().strikethrough(),
-                 false => lp.as_str().clear()
-             });
+    println!(
+        "{}: {}{}",
+        (i + 1).to_string().cyan(),
+        caps.get(1).unwrap().as_str(),
+        match x {
+            true => lp.as_str().dimmed().italic().strikethrough(),
+            false => lp.as_str().clear(),
+        }
+    );
 }
 
-fn dump_lines(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
-              show_completed: bool)
-{
+fn dump_lines(lines: &Vec<&str>, sec_start: i32, sec_end: i32, show_completed: bool) {
     let mut indent = 0;
 
     for i in sec_start..(sec_end + 1) {
@@ -83,8 +81,9 @@ fn dump_lines(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
             }
             println!("{}", format!("{}{}:", hp, ht.bold().underline()));
             indent = hl.len();
-        } else if TASK_NO_X_LINE.is_match(lines[idx]) ||
-                  (show_completed && TASK_X_LINE.is_match(lines[idx])) {
+        } else if TASK_NO_X_LINE.is_match(lines[idx])
+            || (show_completed && TASK_X_LINE.is_match(lines[idx]))
+        {
             let mut hp = String::new();
             for _j in 0..indent {
                 hp.push_str("  ");
@@ -95,14 +94,16 @@ fn dump_lines(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
     }
 }
 
-fn dump_tag(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
-            tag: String, show_completed: bool)
-{
-    let tag_match = Regex::new(&format!(r"^\s*- \[[{}]\] .*\s+#(?i){}(?-i)($|\s+.*$)",
-                                        match show_completed {
-                                            true  => " |x",
-                                            false => " "
-                                        }, tag)).unwrap();
+fn dump_tag(lines: &Vec<&str>, sec_start: i32, sec_end: i32, tag: String, show_completed: bool) {
+    let tag_match = Regex::new(&format!(
+        r"^\s*- \[[{}]\] .*\s+#(?i){}(?-i)($|\s+.*$)",
+        match show_completed {
+            true => " |x",
+            false => " ",
+        },
+        tag
+    ))
+    .unwrap();
     let mut parent = false;
     let mut indent = 0;
 
@@ -121,8 +122,7 @@ fn dump_tag(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
         }
 
         if parent {
-            if TASK_LINE.is_match(lines[idx]) &&
-               lines[idx].starts_with(" ") {
+            if TASK_LINE.is_match(lines[idx]) && lines[idx].starts_with(" ") {
                 let mut hp = String::new();
                 for _j in 0..indent {
                     hp.push_str("  ");
@@ -147,13 +147,12 @@ fn dump_tag(lines: &Vec<&str>, sec_start: i32, sec_end: i32,
     }
 }
 
-fn dump_section_titles(lines: &Vec<&str>)
-{
+fn dump_section_titles(lines: &Vec<&str>) {
     for i in 0..lines.len() {
         let caps = match HDR_LINE.captures(lines[i]) {
-                       None    => continue,
-                       Some(c) => c
-                   };
+            None => continue,
+            Some(c) => c,
+        };
         let mut hp = String::new();
         for _i in 1..caps.get(1).unwrap().as_str().len() {
             hp.push_str("  ");
@@ -163,8 +162,7 @@ fn dump_section_titles(lines: &Vec<&str>)
     }
 }
 
-fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32)
-{
+fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32) {
     let mut start_idx: i32 = -1;
     let mut end_idx: i32 = -1;
     //let hdr = format!(r"^(#+) .*(?i){}(?-i)($|\s+.*$)", section);
@@ -179,23 +177,23 @@ fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32)
 
     for i in 0..lines.len() {
         let caps = match section_hdr.captures(lines[i]) {
-                       None    => continue,
-                       Some(c) => c
-                   };
+            None => continue,
+            Some(c) => c,
+        };
         sec_level = caps.get(1).unwrap().as_str().len();
         start_idx = i as i32;
         break;
     }
 
     if start_idx == -1 {
-        return (false, -1, -1)
+        return (false, -1, -1);
     }
 
     for i in (start_idx + 1) as usize..lines.len() {
         let caps = match HDR_LINE.captures(lines[i]) {
-                       None    => continue,
-                       Some(c) => c
-                   };
+            None => continue,
+            Some(c) => c,
+        };
         if sec_level == caps.get(1).unwrap().as_str().len() {
             end_idx = (i - 1) as i32;
             break;
@@ -209,11 +207,10 @@ fn get_section(lines: &Vec<&str>, section: &str) -> (bool, i32, i32)
     return (true, start_idx, end_idx);
 }
 
-fn write_file(file: &str, lines: &Vec<&str>) -> Result<(), Box<dyn std::error::Error>>
-{
+fn write_file(file: &str, lines: &Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
     match fs::write(file, lines.join("\n")) {
         Err(e) => Err(e.to_string())?,
-        _      => Ok(())
+        _ => Ok(()),
     }
 }
 
@@ -225,15 +222,21 @@ fn replace_nth_char_safe(s: &str, idx: usize, newchar: char) -> String {
 }
 */
 
-fn toggle_task(s: &str) -> String
-{
-    s.chars().enumerate().map(|(i,c)|
-                              if i == 3 {
-                                  if c == ' ' { 'x' }
-                                  else { ' ' }
-                              } else {
-                                  c
-                              }).collect()
+fn toggle_task(s: &str) -> String {
+    s.chars()
+        .enumerate()
+        .map(|(i, c)| {
+            if i == 3 {
+                if c == ' ' {
+                    'x'
+                } else {
+                    ' '
+                }
+            } else {
+                c
+            }
+        })
+        .collect()
 }
 
 fn print_usage(program: &str, opts: Options) {
@@ -241,8 +244,7 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>>
-{
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
 
@@ -258,7 +260,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
-        Err(f) => return Err(f.to_string())?
+        Err(f) => return Err(f.to_string())?,
     };
 
     if matches.opt_present("h") {
@@ -271,13 +273,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
         todo_file = matches.opt_str("f").unwrap();
     } else {
         todo_file = match env::var("TODO_FILE") {
-            Ok(v)  => v,
-            Err(_e) => return Err("must specify a todo file")?
+            Ok(v) => v,
+            Err(_e) => return Err("must specify a todo file")?,
         }
     }
 
-    let txt = fs::read_to_string(&todo_file)
-                  .expect("failed to read todo file");
+    let txt = fs::read_to_string(&todo_file).expect("failed to read todo file");
     //println!("{:?}", txt);
 
     let mut lines: Vec<&str> = txt.lines().collect();
@@ -287,12 +288,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     }
 
     let section = match matches.opt_present("s") {
-                        true  => matches.opt_str("s").unwrap(),
-                        false => "".to_string()
-                  };
+        true => matches.opt_str("s").unwrap(),
+        false => "".to_string(),
+    };
 
-    let (sec, sec_start, sec_end) =
-        get_section(&lines, &section);
+    let (sec, sec_start, sec_end) = get_section(&lines, &section);
     if !sec {
         return Err(format!("section not found ({})", section))?;
     }
@@ -304,8 +304,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     }
     /* dump the selected tag for the section */
     else if matches.opt_present("t") {
-        dump_tag(&lines, sec_start, sec_end, matches.opt_str("t").unwrap(),
-                 matches.opt_present("c"));
+        dump_tag(
+            &lines,
+            sec_start,
+            sec_end,
+            matches.opt_str("t").unwrap(),
+            matches.opt_present("c"),
+        );
         return Ok(());
     }
     /* add a new task to the section */
@@ -336,11 +341,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
     }
     /* toggle a task's completion status */
     else if matches.opt_present("x") {
-        let task_num =
-            match matches.opt_str("x").unwrap().parse::<i32>() {
-                Ok(n)  => (n - 1),
-                Err(e) => return Err(e.to_string())?
-            };
+        let task_num = match matches.opt_str("x").unwrap().parse::<i32>() {
+            Ok(n) => (n - 1),
+            Err(e) => return Err(e.to_string())?,
+        };
 
         /* XXX make sure this line is a task toggle'able line... */
         let toggled_task = toggle_task(&lines[task_num as usize]);
@@ -353,4 +357,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
         return Ok(());
     }
 }
-
