@@ -8,6 +8,7 @@ use regex::{Match, Regex};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::{thread, time};
 use yaml_rust::{Yaml, YamlLoader};
 
 /* Read in the YAML config file and parse it. */
@@ -48,6 +49,10 @@ fn pushover(
         .json(&map)
         .send()?;
     //println!("{:#?}", _resp);
+
+    /* short delay as iOS drops some notifications when spammed */
+    /* XXX make this configurable... */
+    thread::sleep(time::Duration::from_secs(2));
 
     return Ok(());
 }
@@ -831,3 +836,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     return Ok(());
 }
+
