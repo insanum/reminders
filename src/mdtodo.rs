@@ -250,7 +250,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut opts = Options::new();
     opts.optflag("h", "", "print this help menu");
-    opts.optopt("f", "", "todo file", "<file.md>");
+    opts.optopt("f", "", "todo file (default env TODO_FILE)", "<file.md>");
     opts.optflag("l", "", "list section titles");
     opts.optopt("s", "", "task section (default is all tasks)", "<section>");
     opts.optopt("t", "", "show tag", "<tag>");
@@ -336,7 +336,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         */
 
-        lines.insert((sec_start + 2) as usize, &task);
+        //lines.insert((sec_start + 2) as usize, &task);
+        lines.insert(0 as usize, &task);
         return write_file(&todo_file, &lines);
     }
     /* toggle a task's completion status */
