@@ -337,7 +337,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         */
 
         //lines.insert((sec_start + 2) as usize, &task);
-        lines.insert(0 as usize, &task);
+        //lines.insert(0 as usize, &task);
+        lines.insert(4 as usize, &task); // skip over Obsidian Metadata
         return write_file(&todo_file, &lines);
     }
     /* toggle a task's completion status */
